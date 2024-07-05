@@ -18,9 +18,14 @@ endif
 let g:setool_ftplugin = 1
 let s:save_cpo = &cpo
 
+if exists("g:setool_policy_type")
+	let s:SEToolIfBaseDir = "/usr/share/selinux/" .. g:setool_policy_type .. "/include/"
+else
+	" default to targeted policy type
+	let s:SEToolIfBaseDir = "/usr/share/selinux/targeted/include/"
+endif
+
 " Parameters {{{1
-" Base directory of the interfaces on fedora/redhat
-let s:SEToolIfBaseDir = "/usr/share/selinux/devel/include/"
 " Interfaces directories
 let s:SEToolIfDirs = ["admin", "apps", "contrib", "kernel", "roles", "services", "system"]
 " Definitions directories
@@ -42,7 +47,11 @@ let s:indent      = '   ' | " Do not change the indent without updating the fold
 if !isdirectory(s:SEToolIfBaseDir)
 	echoerr "File not found!"
 	echo "Cannot find the directory ".s:SEToolIfBaseDir
-	echo "Is 'selinux-policy-devel' installed?"
+	if exists("g:setool_policy_type")
+		echo "Is the " .. g:setool_policy_type .. " policy type installed?"
+	else
+		echo "Set g:setool_policy_type to one of: strict targeted mcs mls"
+	endif
 	finish
 endif
 " Secondary check
@@ -847,7 +856,8 @@ call s:SEToolListAllIf()
 call s:BufferMapKeys()
 " Make
 set efm=%ACompiling\ %.%#,%C%f%.:%l:%tRROR\ %m\ on\ line\ %*\\d:,%C%s,%Z
-set mp=make\ -f\ /usr/share/selinux/devel/Makefile
+let $selinux_makefile = "/usr/share/selinux/" .. g:setool_policy_type .. "/Makefile"
+set mp=make\ -f\ $selinux_makefile
 
 augroup fold
 " It take to much time to open the buffer, so we just set fde
